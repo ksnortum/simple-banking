@@ -1,9 +1,6 @@
 package banking;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Random;
-import java.util.Scanner;
+import java.util.*;
 
 public class Main {
     private static final Scanner STDIN = new Scanner(System.in);
@@ -115,8 +112,27 @@ public class Main {
     private String createCreditCardNumber() {
         String iin = "400000";
         String account = String.format("%09d", RANDOM.nextInt(1000000000));
-        String checkBit = String.valueOf(RANDOM.nextInt(10));
+        String checkBit = createCheckBit(iin + account);
         return iin + account + checkBit;
+    }
+
+    private String createCheckBit(String iinAndAccount) {
+        String[] chars = iinAndAccount.split("");
+        int[] digits = Arrays.stream(chars)
+                .mapToInt(Integer::valueOf)
+                .toArray();
+
+        for (int i = 0; i < digits.length; i += 2) {
+            digits[i] *= 2;
+        }
+
+        digits = Arrays.stream(digits)
+                .map(i -> i >= 10 ? i - 9 : i)
+                .toArray();
+        int sum = Arrays.stream(digits).sum();
+        int nearestMultipleOfTen = (int) Math.ceil(sum / 10.0) * 10; // TODO is this wrong?
+
+        return String.valueOf(nearestMultipleOfTen - sum);
     }
 
     private void displayAccount(Account account) {
