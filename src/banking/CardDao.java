@@ -1,9 +1,6 @@
 package banking;
 
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
 
 public class CardDao {
     private static final String CREATE_CARD_TABLE_SQL =
@@ -11,13 +8,21 @@ public class CardDao {
             "   id INTEGER PRIMARY KEY," +
             "   number TEXT NOT NULL," +
             "   pin TEXT NOT NULL," +
-            "   balance INTEGER DEFAULT 0);";
+            "   balance INTEGER DEFAULT 0)";
 
     private static final String INSERT_CARD_SQL =
-            "INSERT INTO card (number, pin, balance) VALUES (?, ?, ?);";
+            "INSERT INTO card (number, pin, balance) VALUES (?, ?, ?)";
 
-    private static final String READ_ALL_SQL =
-            "SELECT id, number, pin, balance FROM card;";
+    private static final String UPDATE_BALANCE_SQL =
+            "UPDATE card SET balance = ? WHERE id = ?";
+
+    private static final String ACCOUNT_FROM_CC_NUMBER_AND_PIN_SQL =
+            "SELECT id, balance FROM card WHERE number = ? AND pin = ?";
+
+    private static final String ACCOUNT_FROM_CC_NUMBER_SQL =
+            "SELECT pin, id, balance FROM card WHERE number = ?";
+    private static final String DELETE_ACCOUNT_SQL =
+            "DELETE FROM card WHERE id = ?";
 
     public void createCardTable() {
         Connection conn = DbConnection.connectToDb();
@@ -45,7 +50,7 @@ public class CardDao {
                     return rs.getInt(1);
                 }
             } else {
-                System.err.println("0 rows affected in card Insert");
+                System.err.printf("0 rows affected in card create%n%s%n", account);
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -54,28 +59,82 @@ public class CardDao {
         return -1;
     }
 
-    public List<Account> loadAll() {
-        List<Account> accountList = new ArrayList<>();
+    public void updateBalance(Account account) {
         Connection conn = DbConnection.connectToDb();
 
-        try (Statement statement = conn.createStatement()) {
-            ResultSet rs = statement.executeQuery(READ_ALL_SQL);
+        try (PreparedStatement statement = conn.prepareStatement(UPDATE_BALANCE_SQL)) {
+            statement.setInt(1, account.getBalance());
+            statement.setInt(2, account.getId());
+            int rowsAffected = statement.executeUpdate();
 
-            while (rs.next()) {
-                int id = rs.getInt(1);
-                String creditCardNumber = rs.getString(2);
-                String pin = rs.getString(3);
-                int balance = rs.getInt(4);
-                Account account = new Account(creditCardNumber, pin);
-                account.setId(id);
-                account.setBalance(balance);
-                accountList.add(account);
+            if (rowsAffected != 1) {
+                System.err.printf("Wrong number of rows affected (%d) in card update%n%s%n",
+                        rowsAffected, account);
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
+    }
 
+    public Account accountFromCCNumberAndPin(String creditCardNumber, String pin) {
+        Connection conn = DbConnection.connectToDb();
 
-        return accountList;
+        try (PreparedStatement statement = conn.prepareStatement(ACCOUNT_FROM_CC_NUMBER_AND_PIN_SQL)) {
+            statement.setString(1, creditCardNumber);
+            statement.setString(2, pin);
+            ResultSet rs = statement.executeQuery();
+
+            if (rs.next()) {
+                Account account = new Account(creditCardNumber, pin);
+                account.setId(rs.getInt(1));
+                account.setBalance(rs.getInt(2));
+
+                return account;
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
+    public Account accountFromCCNumber(String creditCardNumber) {
+        Connection conn = DbConnection.connectToDb();
+
+        try (PreparedStatement statement = conn.prepareStatement(ACCOUNT_FROM_CC_NUMBER_SQL)) {
+            statement.setString(1, creditCardNumber);
+            ResultSet rs = statement.executeQuery();
+
+            if (rs.next()) {
+                String pin = rs.getString(1);
+                Account account = new Account(creditCardNumber, pin);
+                account.setId(rs.getInt(2));
+                account.setBalance(rs.getInt(3));
+
+                return account;
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
+    public void deleteAccount(Account account) {
+        Connection conn = DbConnection.connectToDb();
+
+        try (PreparedStatement statement = conn.prepareStatement(DELETE_ACCOUNT_SQL)) {
+            statement.setInt(1, account.getId());
+            int rowsAffected = statement.executeUpdate();
+
+            if (rowsAffected != 1) {
+                System.err.printf("Wrong number of rows affected (%d) in card deleteAccount%n%s%n",
+                        rowsAffected, account);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 }

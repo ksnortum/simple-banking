@@ -34,4 +34,10 @@ public class Account {
     public void setBalance(int balance) {
         this.balance = balance;
     }
+
+    @Override
+    public String toString() {
+        return String.format("Account { id = %d, cc# = %s, pin = %s, balance = %d }",
+                id, creditCardNumber, pin, balance);
+    }
 }
