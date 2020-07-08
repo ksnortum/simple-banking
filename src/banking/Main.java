@@ -1,5 +1,7 @@
 package banking;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.*;
 
 public class Main {
@@ -10,10 +12,13 @@ public class Main {
     private boolean loggedIn = false;
 
     public static void main(String[] args) {
-        new Main().run();
+        new Main().run(args);
     }
 
-    private void run() {
+    private void run(String[] args) {
+        commandLineArguments(args);
+        createDbFile();
+        CardDao.createCardTable();
         boolean appShouldContinue;
 
         do {
@@ -25,6 +30,25 @@ public class Main {
         } while (appShouldContinue);
 
         System.out.printf("%nBye!%n");
+    }
+
+    private void commandLineArguments(String[] args) {
+        if (args.length > 1 && "-fileName".equals(args[0])) {
+            GlobalData.fileName = args[1];
+        }
+    }
+
+    private void createDbFile() {
+        File file = new File(GlobalData.fileName);
+
+        if (!file.exists()) {
+            try {
+                file.createNewFile();
+            } catch (IOException e) {
+                e.printStackTrace();
+                throw new RuntimeException("Could not create \"" + GlobalData.fileName + "\"");
+            }
+        }
     }
 
     private boolean doCreateLogin() {
