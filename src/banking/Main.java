@@ -10,6 +10,7 @@ public class Main {
 
     private final Map<String, Account> accounts = new HashMap<>();
     private boolean loggedIn = false;
+    private CardDao cardDao = new CardDao();
 
     public static void main(String[] args) {
         new Main().run(args);
@@ -18,7 +19,8 @@ public class Main {
     private void run(String[] args) {
         commandLineArguments(args);
         createDbFile();
-        CardDao.createCardTable();
+        cardDao.createCardTable();
+        loadCards();
         boolean appShouldContinue;
 
         do {
@@ -48,6 +50,14 @@ public class Main {
                 e.printStackTrace();
                 throw new RuntimeException("Could not create \"" + GlobalData.fileName + "\"");
             }
+        }
+    }
+
+    private void loadCards() {
+        List<Account> accountList = cardDao.loadAll();
+
+        for (Account account : accountList) {
+            accounts.put(account.getCreditCardNumber(), account);
         }
     }
 

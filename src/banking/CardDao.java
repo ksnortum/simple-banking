@@ -1,6 +1,9 @@
 package banking;
 
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 
 public class CardDao {
     private static final String CREATE_CARD_TABLE_SQL =
@@ -13,7 +16,10 @@ public class CardDao {
     private static final String INSERT_CARD_SQL =
             "INSERT INTO card (number, pin, balance) VALUES (?, ?, ?);";
 
-    public static void createCardTable() {
+    private static final String READ_ALL_SQL =
+            "SELECT id, number, pin, balance FROM card;";
+
+    public void createCardTable() {
         Connection conn = DbConnection.connectToDb();
 
         try (Statement statement = conn.createStatement()) {
@@ -46,5 +52,30 @@ public class CardDao {
         }
 
         return -1;
+    }
+
+    public List<Account> loadAll() {
+        List<Account> accountList = new ArrayList<>();
+        Connection conn = DbConnection.connectToDb();
+
+        try (Statement statement = conn.createStatement()) {
+            ResultSet rs = statement.executeQuery(READ_ALL_SQL);
+
+            while (rs.next()) {
+                int id = rs.getInt(1);
+                String creditCardNumber = rs.getString(2);
+                String pin = rs.getString(3);
+                int balance = rs.getInt(4);
+                Account account = new Account(creditCardNumber, pin);
+                account.setId(id);
+                account.setBalance(balance);
+                accountList.add(account);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+
+        return accountList;
     }
 }
