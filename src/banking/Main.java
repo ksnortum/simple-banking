@@ -129,8 +129,14 @@ public class Main {
         String creditCardNumber = createCreditCardNumber();
         String pin = String.format("%04d", RANDOM.nextInt(10000));
         Account account = new Account(creditCardNumber, pin);
-        accounts.put(creditCardNumber, account);
-        displayAccount(account);
+        CardDao cardDao = new CardDao();
+        int id = cardDao.create(account);
+
+        if (id != -1) {
+            account.setId(id);
+            accounts.put(creditCardNumber, account);
+            displayAccount(account);
+        }
     }
 
     private String createCreditCardNumber() {
@@ -154,7 +160,7 @@ public class Main {
                 .map(i -> i >= 10 ? i - 9 : i)
                 .toArray();
         int sum = Arrays.stream(digits).sum();
-        int nearestMultipleOfTen = (int) Math.ceil(sum / 10.0) * 10; // TODO is this wrong?
+        int nearestMultipleOfTen = (int) Math.ceil(sum / 10.0) * 10;
 
         return String.valueOf(nearestMultipleOfTen - sum);
     }
